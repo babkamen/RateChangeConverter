@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <title>USD to PLN Exchange rates</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.css"/>
+    <link rel="stylesheet" type="text/css" href="css/styles.css"/>
+    <link rel="stylesheet" type="text/css" href="css/pace.css"/>
+    <link rel='stylesheet prefetch' href='css/daterangepicker.css'/>
+</head>
+
+<body>
+<div class="container-fluid">
+    <div class="row row-centered">
+        <h1> USD to PLN exchange rates</h1>
+        <div class="form-group daterange-block">
+            <label for="daterange">Date range:</label>
+            <input type="text" name="daterange" id="daterange" value="" class="form-control"/>
+        </div>
+        <div class="col-md-12">
+            <button type="button" class="btn btn-primary" id="download_exchange">Download exchange rates</button>
+            <button type="button" class="btn btn-primary" id="download_excel">Download Excel</button>
+        </div>
+    </div>
+    <div class="row chart-row">
+        <div class="col-md-6">
+            <canvas id="myChart"  height="300"></canvas>
+        </div>
+        <div class="col-md-6">
+            <table class="table table-bordered">
+                <thead>
+                <th data-override="date">Date</th>
+                <th data-override="rate">Exchange rate</th>
+                </thead>
+                <tbody class="table-body">
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="result"></div>
+    <script src='js/lib/jquery.min.js'></script>
+    <script src='js/lib/modernizr.min.js'></script>
+    <script src='js/lib/moment.min.js'></script>
+    <script src='js/lib/daterangepicker.js'></script>
+    <script src='js/lib/Chart.min.js'></script>
+    <script src='js/lib/jquery.tabletojson.min.js'></script>
+    <script src="js/index.js"></script>
+    <script  src="js/lib/pace.min.js"></script>
+</div>
+</body>
+</html>
