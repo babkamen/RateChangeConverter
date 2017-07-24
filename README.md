@@ -31,11 +31,3 @@ Technologies:
     mvn clean package
     
 And deploy to tomcat
-
-Alternatively you can comment 
-```java
-<scope>provided</scope>
-```
-And run 
-
-    mvn spring-boot:run
