@@ -2,6 +2,9 @@ RateChangeObserver
 ------------
 Observes USD exchange rates on timeline
 
+Uses [Public NBP API](http://api.nbp.pl/en.html "Public NBP API") to get data.
+It took about 0.5hr to process 20gb xml.
+
 [<img src="http://i.imgur.com/IquXRiR.png">](#)
 
 
