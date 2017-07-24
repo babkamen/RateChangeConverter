@@ -1,15 +1,22 @@
 const EXCEL_URL = "excel";
-const MAX_NUMBER_OF_DOCUMENTS=100000000;
-const FIND_ALL = "rates?sort=date,desc&size="+MAX_NUMBER_OF_DOCUMENTS;
-const FIND_BETWEEN_DATES = "rates/{0}/{1}?sort=date,desc&size="+MAX_NUMBER_OF_DOCUMENTS;
+const MAX_NUMBER_OF_DOCUMENTS = 100000000;
+const FIND_ALL = "rates?sort=date,desc&size=" + MAX_NUMBER_OF_DOCUMENTS;
+const FIND_BETWEEN_DATES = "rates/{0}/{1}?sort=date,desc&size=" + MAX_NUMBER_OF_DOCUMENTS;
 const DOWNLOAD_EXCHANGE_RATES_URL = "rates/download/{0}/{1}";
 const DATE_RANGE_PICKER_SELECTOR = 'input[name="daterange"]';
 const DATE_FORMAT = 'YYYY-MM-DD';
 
 var chart;
 
-$(document).ajaxStart(function() { Pace.stop();Pace.bar.render();Pace.go() });
-$(document).ajaxStop(function() { Pace.restart(); });
+$(document).ajaxStart(function () {
+    Pace.stop();
+    Pace.bar.render();
+    Pace.go()
+});
+
+$(document).ajaxStop(function () {
+    Pace.restart();
+});
 
 
 const chartConfig = {
@@ -95,8 +102,9 @@ function makeApiCallAndUpdateData(startDate, endDate) {
         console.log("data", data);
         const content = data.content;
         updateTableAndChart(content);
-    }).fail(function () {
+    }).fail(function (jqXHR, textStatus, errorThrown) {
         alert("Something went wrong");
+        console.log(jqXHR, textStatus, errorThrown)
     });
 }
 
@@ -109,10 +117,89 @@ function onDatePickerPick(ev, picker) {
     makeApiCallAndUpdateData(startDate, endDate);
 }
 
+/**
+ * Returns number of occurences of rate property after i
+ */
+function countSameValues(data, i) {
+    console.log(typeof data[0].rate);
+    var count = 0;
+    for (var r = i; r + 1 < data.length && data[r].rate === data[r + 1].rate; r++, count++) {
+        console.log("R,rate1,rate2=", r, data[r].rate, data[r + 1].rate);
+    }
+    return count;
+}
+
+function diffDays(date, endDate) {
+    var a = moment(date);
+    var b = moment(endDate);
+    return a.diff(b, 'days');
+}
+function handleUnknownValues(content) {
+    var data = JSON.parse(JSON.stringify(content));
+    for (var i = 0; i < data.length - 1; i++) {
+        var o = data[i];
+        var date = o.date;
+        var rate = o.rate;
+        var j = parseInt(i) + 1;
+        var endDate = data[j].date;
+        var diff = diffDays(date, endDate);
+        console.log("Date1=", date, "NextDate=", endDate, "diff=", diff);
+        console.log("I,Elem,NextElem=",i, data[i].rate, data[j].rate);
+        if (diff > 1) {
+            // o.rowspan = diff;
+            var dates = enumerateDaysBetweenDatesInDescOrder(date, endDate);
+            console.log("dates=", date, endDate, dates);
+            var c=i+1;
+            for (var t of dates) {
+                data.splice(c++, 0, {date: t, rate: rate});
+            }
+            i += dates.length+1;
+        }
+
+    }
+    return data;
+}
+
+function handleDuplicates(content) {
+    var data = JSON.parse(JSON.stringify(content));
+    for (var i = 0; i < data.length - 1; i++) {
+        var o = data[i];
+        var date = o.date;
+        var j = parseInt(i) + 1;
+        if (data[j].rate === data[i].rate) {
+            var count = countSameValues(data, j);
+            console.log("Same values=", count);
+            if (o.rowspan) {
+                o.rowspan = o.rowspan + count + 2;
+            } else {
+                o.rowspan = count + 2;
+            }
+            console.log("Rowspan=", o.rowspan);
+            for (var r = j; r < j + count + 1; r++) {
+                data[r].rate = null;
+            }
+            console.log("After cleaning=", JSON.stringify(data));
+
+        }
+
+
+    }
+    return data;
+}
 
 function updateTableAndChart(content) {
-    updateTable(content);
-    updateChart(content);
+    var data = content;
+    if (content.length > 0) {
+        data = handleUnknownValues(data);
+    }
+    updateChart(data);
+
+    if(content.length>0){
+        data = handleDuplicates(data);
+    }
+    updateTable(data);
+
+    console.log("Content=", content);
 }
 
 function updateTable(data) {
@@ -122,32 +209,25 @@ function updateTable(data) {
         for (var i in data) {
             var o = data[i];
             var date = o.date;
+            var rate = o.rate;
             var j = parseInt(i) + 1;
-            var rowspan = "";
+            var rowspan = o.rowspan ? "rowspan=" + o.rowspan + " class='vertical-center'" : "";
             var diff;
-            if (i < data.length - 1) {
+            if (i < data.length - 1 && rate) {
                 var endDate = data[j].date;
                 var a = moment(date);
                 var b = moment(endDate);
                 diff = a.diff(b, 'days');
                 console.log("Date1=", date, "NextDate=", endDate, "diff=", diff);
                 if (diff > 1) {
-                    rowspan = "rowspan=" + diff + " class='vertical-center'";
                 }
             }
-            var tableRow = `<tr>
-      <td>` + date + `</td><td ` + rowspan + `>` + o.rate + `</td>
-      </tr> `;
-            html += tableRow;
-            if (rowspan.length > 0) {
-                //descending order
-                var dates = enumerateDaysBetweenDatesInDescOrder(date, endDate);
-                console.log("dates=", date, endDate, dates);
-                for (var t of dates) {
-                    console.log("Enumdate=", t);
-                    html += "<tr><td>" + t + "</td></tr>"
-                }
+            html += `<tr><td>${date}</td>`;
+            if (rate) {
+                html += `<td ${rowspan}>${rate}</td>`;
             }
+            html += `</tr>`;
+
         }
     }
     console.log("Table=", html);
